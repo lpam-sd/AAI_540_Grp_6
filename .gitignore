@@ -1,7 +1,9 @@
-.ipynb_checkpoints/
 __pycache__/
-data/
-*.csv
+.ipynb_checkpoints/
+
+# SageMaker artifacts
 *.pth
 *.pt
-model.tar.gz
+*.tar.gz
+model/
+data/
