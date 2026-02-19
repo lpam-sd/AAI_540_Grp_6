@@ -1,0 +1,84 @@
+import argparse
+import os
+from io import BytesIO
+
+import boto3
+import pandas as pd
+from PIL import Image
+
+TARGET_W, TARGET_H = 224, 224
+
+KP_COLS = [
+    "left_eye_x", "left_eye_y", "right_eye_x", "right_eye_y",
+    "mouth_x", "mouth_y", "left_ear_1_x", "left_ear_1_y",
+    "left_ear_2_x", "left_ear_2_y", "left_ear_3_x", "left_ear_3_y",
+    "right_ear_1_x", "right_ear_1_y", "right_ear_2_x", "right_ear_2_y",
+    "right_ear_3_x", "right_ear_3_y",
+]
+
+s3 = boto3.client("s3")
+
+def load_image(bucket, key):
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    return Image.open(BytesIO(obj["Body"].read())).convert("RGB")
+
+def resize_and_save_image(s3_uri, output_dir, target_width, target_height) -> str:
+    bucket, key = s3_uri.replace("s3://", "").split("/", 1)
+    img = load_image(bucket, key)
+    img_resized = img.resize((target_width, target_height), Image.BILINEAR)
+    img_path = os.path.join(output_dir, "_".join(key.split("/")[-2:]))
+    img_resized.save(img_path)
+    return os.path.basename(img_path)
+
+def transform_keypoint(kp: float, s0: float) -> float:
+    return (kp / s0)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metadata", type=str, required=True)
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--split", type=str, required=True, choices=["train", "validation"])
+    args = parser.parse_args()
+
+    csv_files = [
+        os.path.join(args.metadata, f)
+        for f in os.listdir(args.metadata)
+        if f.endswith(".csv") and not f.endswith(".csv.metadata")
+    ]
+    if not csv_files:
+        raise FileNotFoundError(f"No CSV files found in {args.metadata}")
+
+    df = pd.read_csv(csv_files[0])
+    df = df[df["split"] == args.split].reset_index(drop=True)
+    print(f"Processing {len(df)} rows for split=\\'{args.split}\\'")
+
+    os.makedirs(args.output, exist_ok=True)
+    records = []
+
+    for idx, row in df.iterrows():
+        w0, h0 = row["width"], row["height"]
+        if w0 == 0 or h0 == 0:
+            print(f"Skipping row {idx} — invalid dimensions w={w0}, h={h0}")
+            continue
+        
+        img_filename = resize_and_save_image(
+            s3_uri=row["remote_path"],
+            output_dir=args.output,
+            target_height=TARGET_H,
+            target_width=TARGET_W,
+        )
+        kp_norm = []
+        for col in KP_COLS:
+            if col.endswith("_x"):
+                kp_norm.append(transform_keypoint(row[col], w0))
+            elif col.endswith("_y"):
+                kp_norm.append(transform_keypoint(row[col], h0))
+            else:
+                raise ValueError(f"Unexpected keypoint column: {col}")
+        kp_cols_norm = [f"{col}_norm" for col in KP_COLS]
+        records.append({"image": img_filename, **dict(zip(kp_cols_norm, kp_norm))})
+
+    pd.DataFrame(records).to_parquet(
+        os.path.join(args.output, "annotations.parquet"), index=False
+    )
+    print(f"Saved {len(records)} records to annotations.parquet")
