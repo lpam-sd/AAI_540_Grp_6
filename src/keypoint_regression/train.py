@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 
 import pandas as pd
 import torch
@@ -204,3 +205,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train(args)
+    os.makedirs("/opt/ml/model/code", exist_ok=True)
+    shutil.copy("inference.py", "/opt/ml/model/code/inference.py")
