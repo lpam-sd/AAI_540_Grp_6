@@ -37,7 +37,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--metadata", type=str, required=True)
     parser.add_argument("--output", type=str, required=True)
-    parser.add_argument("--split", type=str, required=True, choices=["train", "validation"])
+    parser.add_argument("--split", type=str, required=True, choices=["train", "validation", "test"])
+    parser.add_argument("--sample-size", type=int, required=False, default=None)
     args = parser.parse_args()
 
     csv_files = [
@@ -50,6 +51,9 @@ if __name__ == "__main__":
 
     df = pd.read_csv(csv_files[0])
     df = df[df["split"] == args.split].reset_index(drop=True)
+    if args.sample_size is not None:
+        df = df.sample(args.sample_size, axis=0)
+    
     print(f"Processing {len(df)} rows for split=\\'{args.split}\\'")
 
     os.makedirs(args.output, exist_ok=True)

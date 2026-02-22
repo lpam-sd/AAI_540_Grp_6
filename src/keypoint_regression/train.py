@@ -80,20 +80,13 @@ class KeypointModel(nn.Module):
         # Regression head -> (B, 18)
         self.head = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(2048, 512),
-            nn.ReLU(),
-            nn.Dropout(p=0.3),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Dropout(p=0.3),
+            nn.Linear(2048, 512), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(512, 256),  nn.ReLU(), nn.Dropout(0.3),
             nn.Linear(256, num_keypoints * 2),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        features = self.backbone(x)      # (B, 2048, 1, 1)
-        keypoints = self.head(features)  # (B, 18)
-        return keypoints
-
+        return self.head(self.backbone(x))
 
 # ---------------------------------------------------------------------------
 # Transforms
@@ -136,14 +129,14 @@ def train(args):
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=16,
         pin_memory=True,
     )
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        num_workers=4,
+        num_workers=16,
         pin_memory=True,
     )
 
