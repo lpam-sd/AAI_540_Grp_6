@@ -1,4 +1,4 @@
-# AAI 540 — Group 6: Pose Estimation & Classification Pipeline
+# AAI 540 — Group 6: Cat Pose Estimation & Classification Pipeline
 
 > **Course:** AAI 540 — Machine Learning Operations  
 > **Team:** Group 6  
