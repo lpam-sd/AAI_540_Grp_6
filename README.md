@@ -8,10 +8,10 @@
 
 ## Overview
 
-This project implements an end-to-end MLOps pipeline for **human pose estimation and action classification** using AWS cloud services. The pipeline covers everything from raw data ingestion through model training, monitoring, and live endpoint deployment — following production-grade MLOps best practices.
+This project implements an end-to-end MLOps pipeline for **cat pose estimation and action classification** using AWS cloud services. The pipeline covers everything from raw data ingestion through model training, monitoring, and live endpoint deployment — following production-grade MLOps best practices.
 
 The system combines two complementary models:
-- A **keypoint regression model** that predicts human body keypoint coordinates from image data
+- A **keypoint regression model** that predicts cat facial keypoint coordinates from image data
 - A **classification model** that maps those keypoints (or raw features) to action/pose class labels
 
 ---
@@ -50,10 +50,10 @@ Creates an AWS Glue/Athena table over the S3 data and performs exploratory data 
 Ingests processed features into the **SageMaker Feature Store**, enabling reproducible, versioned feature retrieval for model training and serving.
 
 ### 5a. Classification Model (`5_Classification_Model.ipynb`)
-Trains a classifier to predict action/pose categories. Covers data preparation, training job configuration, hyperparameter settings, and evaluation metrics.
+Trains a classifier to detect cats in frame. Covers data preparation, training job configuration, hyperparameter settings, and evaluation metrics.
 
 ### 5b. Keypoint Regression Model (`5-1_Keypoint_Regression_Model.ipynb`)
-Trains a regression model to predict (x, y) coordinates for human body keypoints. Covers model architecture, training, and evaluation (e.g., RMSE, normalized error).
+Trains a regression model to predict (x, y) coordinates for cat facial keypoints. Covers model architecture, training, and evaluation (e.g., RMSE, normalized error).
 
 ### 6. Monitoring (`6_Monitoring.ipynb`)
 Sets up **SageMaker Model Monitor** to capture inference traffic, establish data quality baselines, and schedule drift detection jobs against the deployed endpoint.
